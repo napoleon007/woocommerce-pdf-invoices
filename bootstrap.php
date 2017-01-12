@@ -82,6 +82,15 @@ function _bewpi_on_plugin_activation() {
 
 	// save plugin version for update function.
 	update_site_option( 'bewpi_version', BEWPI_VERSION );
+
+	// initialize options with settings defaults.
+	require_once BEWPI_DIR . 'includes/admin/class-bewpi-admin-settings.php';
+	$settings = BEWPI_Admin_Settings::get_settings_pages();
+	foreach ( $settings as $setting ) {
+		$defaults = wp_list_pluck( $setting->get_settings(), 'default', 'name' );
+		$options  = array_merge( $defaults, (array) get_option( $setting->key ) );
+		update_option( $setting->key, $options );
+	}
 }
 
 register_activation_hook( __FILE__, '_bewpi_on_plugin_activation' );

@@ -1,8 +1,6 @@
 <?php
 /**
- * General settings
- *
- * Handling general settings.
+ * Settings General
  *
  * @author      Bas Elbers
  * @category    Admin
@@ -14,11 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! class_exists( 'BEWPI_General_Settings' ) ) {
+if ( ! class_exists( 'BEWPI_Settings_General' ) ) {
 	/**
 	 * Class BEWPI_General_Settings.
 	 */
-	class BEWPI_General_Settings extends BEWPI_Abstract_Setting {
+	class BEWPI_Settings_General extends BEWPI_Abstract_Setting {
 		/**
 		 * Constant template settings key
 		 *
@@ -30,16 +28,14 @@ if ( ! class_exists( 'BEWPI_General_Settings' ) ) {
 		 * Initializes the template settings.
 		 */
 		public function __construct() {
-			add_action( 'admin_init', array( $this, 'admin_init' ) );
-			add_action( 'admin_notices', array( $this, 'show_settings_notices' ) );
-		}
+			$this->id = 'general';
+			$this->label = __( 'General', 'woocommerce-pdf-invoices' );
+			$this->key = self::PREFIX . $this->id . '_settings';
 
-		/**
-		 * Initialize settings within admin.
-		 */
-		public function admin_init() {
-			$this->load_settings();
-			$this->create_settings();
+			parent::create_sections( $this->get_sections() );
+			parent::create_fields( $this->get_settings() );
+
+			register_setting( self::SETTINGS_KEY, self::SETTINGS_KEY, array( $this, 'save' ) );
 		}
 
 		/**
@@ -47,7 +43,7 @@ if ( ! class_exists( 'BEWPI_General_Settings' ) ) {
 		 *
 		 * @return array
 		 */
-		private function the_settings() {
+		public function get_settings() {
 			$settings = array(
 				array(
 					'id'       => 'bewpi-email-types',
@@ -77,7 +73,7 @@ if ( ! class_exists( 'BEWPI_General_Settings' ) ) {
 						array(
 							'name'    => __( 'Completed order', 'woocommerce-pdf-invoices' ),
 							'value'   => 'customer_completed_order',
-							'default' => 0,
+							'default' => 1,
 						),
 						array(
 							'name'    => __( 'Customer invoice', 'woocommerce-pdf-invoices' ),
@@ -220,28 +216,59 @@ if ( ! class_exists( 'BEWPI_General_Settings' ) ) {
 		}
 
 		/**
-		 * Fetch all multiple checkbox option defaults from settings.
-		 */
-		private function get_multiple_checkbox_defaults() {
-			$defaults = array();
-			$settings = $this->the_settings();
-			foreach ( $settings as $setting ) {
-				if ( array_key_exists( 'type', $setting ) && 'multiple_checkbox' === $setting['type'] ) {
-					$defaults = array_merge( $defaults, wp_list_pluck( $setting['options'], 'default', 'value' ) );
-				}
-			}
-
-			return $defaults;
-		}
-
-		/**
-		 * Get all default values from the settings array.
+		 * All sections.
 		 *
 		 * @return array
 		 */
-		private function get_defaults() {
+		private function get_sections() {
+			$sections = array(
+				array(
+					'id' => 'email',
+					'title' => __( 'Email Options', 'woocommerce-pdf-invoices' ),
+					'callback' => null,
+					'page' => self::SETTINGS_KEY,
+				),
+				array(
+					'id' => 'download',
+					'title' => __( 'Download Options', 'woocommerce-pdf-invoices' ),
+					'callback' => null,
+					'page' => self::SETTINGS_KEY,
+				),
+				array(
+					'id' => 'cloud_storage',
+					'title' => __( 'Cloud Storage Options', 'woocommerce-pdf-invoices' ),
+					'callback' => array(
+						$this,
+						function() {
+							printf( __( 'Sign-up at <a href="%1$s">Email It In</a> to send invoices to your Dropbox, OneDrive, Google Drive or Egnyte and enter your account below.', 'woocommerce-pdf-invoices' ), 'https://emailitin.com' );
+						},
+					),
+					'page' => self::SETTINGS_KEY,
+				),
+				array(
+					'id' => 'interface',
+					'title' => __( 'Interface Options', 'woocommerce-pdf-invoices' ),
+					'callback' => null,
+					'page' => self::SETTINGS_KEY,
+				),
+				array(
+					'id' => 'debug',
+					'title' => __( 'Debug Options', 'woocommerce-pdf-invoices' ),
+					'callback' => null,
+					'page' => self::SETTINGS_KEY,
+				),
+			);
+
+			return apply_filters( 'bewpi_general_settings_sections', $sections );
+		}
+
+		/**
+		 * Create options and merging defaults.
+		 *
+		 * @param array $settings Option group settings.
+		 */
+		public static function create_options( $settings ) {
 			// remove multiple checkbox types from settings.
-			$settings = $this->the_settings();
 			foreach ( $settings as $index => $setting ) {
 				if ( array_key_exists( 'type', $setting ) && 'multiple_checkbox' === $setting['type'] ) {
 					unset( $settings[ $index ] );
@@ -249,41 +276,28 @@ if ( ! class_exists( 'BEWPI_General_Settings' ) ) {
 			}
 
 			// defaults of email types are within a lower hierarchy.
-			$multiple_checkbox_defaults = $this->get_multiple_checkbox_defaults();
-			$defaults = array_merge( $multiple_checkbox_defaults, wp_list_pluck( $settings, 'default', 'name' ) );
+			$defaults = array();
+			foreach ( $settings as $setting ) {
+				if ( array_key_exists( 'type', $setting ) && 'multiple_checkbox' === $setting['type'] ) {
+					$defaults = array_merge( $defaults, wp_list_pluck( $setting['options'], 'default', 'value' ) );
+				}
+			}
 
-			return $defaults;
-		}
+			// merge email type defaults.
+			$defaults = array_merge( $defaults, wp_list_pluck( $settings, 'default', 'name' ) );
+			$options  = array_merge( $defaults, (array) get_option( self::SETTINGS_KEY ) );
 
-		/**
-		 * Load all settings into settings var and merge with defaults.
-		 */
-		public function load_settings() {
-			$defaults = $this->get_defaults();
-			$options  = (array) get_option( self::SETTINGS_KEY );
-			$options  = array_merge( $defaults, $options );
 			update_option( self::SETTINGS_KEY, $options );
 		}
 
 		/**
-		 * Adds all the different settings sections
-		 */
-		private function add_settings_sections() {
-			add_settings_section( 'email', __( 'Email Options', 'woocommerce-pdf-invoices' ), null, self::SETTINGS_KEY );
-			add_settings_section( 'download', __( 'Download Options', 'woocommerce-pdf-invoices' ), null, self::SETTINGS_KEY );
-			add_settings_section( 'cloud_storage', __( 'Cloud Storage Options', 'woocommerce-pdf-invoices' ), array( $this, 'cloud_storage_desc_callback' ), self::SETTINGS_KEY );
-			add_settings_section( 'interface', __( 'Interface Options', 'woocommerce-pdf-invoices' ), null, self::SETTINGS_KEY );
-			add_settings_section( 'debug', __( 'Debug Options', 'woocommerce-pdf-invoices' ), null, self::SETTINGS_KEY );
-		}
-
-		/**
-		 * Validate settings.
+		 * Save and validate options.
 		 *
-		 * @param array $input settings.
+		 * @param array $input Option values.
 		 *
 		 * @return mixed|void
 		 */
-		public function validate_input( $input ) {
+		public function save( $input ) {
 			$output = get_option( self::SETTINGS_KEY );
 			foreach ( $input as $key => $value ) {
 				// strip all html tags and properly handle quoted strings.
@@ -296,42 +310,9 @@ if ( ! class_exists( 'BEWPI_General_Settings' ) ) {
 				$output['email_it_in_account'] = $sanitized_email;
 			}
 
-			return apply_filters( 'validate_input', $output, $input );
-		}
-
-		/**
-		 * Adds settings fields
-		 */
-		private function add_settings_fields() {
-			$the_settings = $this->the_settings();
-			foreach ( $the_settings as $setting ) {
-				add_settings_field( $setting['name'], $setting['title'], $setting['callback'], $setting['page'], $setting['section'], $setting );
-			};
-		}
-
-		/**
-		 * Register all settings fields.
-		 */
-		public function create_settings() {
-			$this->add_settings_sections();
-			register_setting( self::SETTINGS_KEY, self::SETTINGS_KEY, array( $this, 'validate_input' ) );
-			$this->add_settings_fields();
-		}
-
-		/**
-		 * Cloud Storage section callback.
-		 */
-		public function cloud_storage_desc_callback() {
-			printf( __( 'Sign-up at <a href="%1$s">Email It In</a> to send invoices to your Dropbox, OneDrive, Google Drive or Egnyte and enter your account below.', 'woocommerce-pdf-invoices' ), 'https://emailitin.com' ); // WPCS: XSS OK.
-		}
-
-		/**
-		 * Show all settings notices.
-		 */
-		public function show_settings_notices() {
-			settings_errors( self::SETTINGS_KEY );
+			return apply_filters( 'bewpi_save_settings_' . $this->id, $output, $input );
 		}
 	}
 
-	new BEWPI_General_Settings();
+	return new BEWPI_Settings_General();
 }

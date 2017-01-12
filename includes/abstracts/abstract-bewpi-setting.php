@@ -20,6 +20,27 @@ if ( ! class_exists( 'BEWPI_Abstract_Setting' ) ) {
 	 */
 	abstract class BEWPI_Abstract_Setting {
 		/**
+		 * Settings slug.
+		 *
+		 * @var string
+		 */
+		public $id;
+
+		/**
+		 * Settings name.
+		 *
+		 * @var string
+		 */
+		public $label;
+
+		/**
+		 * Settings key.
+		 *
+		 * @var string
+		 */
+		protected $key;
+
+		/**
 		 * Options and settings prefix.
 		 *
 		 * @var string
@@ -152,6 +173,56 @@ if ( ! class_exists( 'BEWPI_Abstract_Setting' ) ) {
 			><?php echo esc_textarea( $options[ $args['name'] ] ); ?></textarea>
 			<div class="bewpi-notes"><?php echo $args['desc']; ?></div>
 			<?php
+		}
+
+		/**
+		 * Create options and merging defaults.
+		 *
+		 * @param array $settings Option group settings.
+		 */
+		public function create_options( $settings ) {
+			// remove multiple checkbox types from settings.
+			foreach ( $settings as $index => $setting ) {
+				if ( array_key_exists( 'type', $setting ) && 'multiple_checkbox' === $setting['type'] ) {
+					unset( $settings[ $index ] );
+				}
+			}
+
+			// defaults of email types are within a lower hierarchy.
+			$defaults = array();
+			foreach ( $settings as $setting ) {
+				if ( array_key_exists( 'type', $setting ) && 'multiple_checkbox' === $setting['type'] ) {
+					$defaults = array_merge( $defaults, wp_list_pluck( $setting['options'], 'default', 'value' ) );
+				}
+			}
+
+			// merge email type defaults.
+			$defaults = array_merge( $defaults, wp_list_pluck( $settings, 'default', 'name' ) );
+			$options  = array_merge( $defaults, (array) get_option( $this->key ) );
+
+			update_option( self::SETTINGS_KEY, $options );
+		}
+
+		/**
+		 * Save settings sections.
+		 *
+		 * @param array $sections Settings sections from specific option group.
+		 */
+		protected static function create_sections( $sections ) {
+			foreach ( $sections as $section ) {
+				add_settings_section( $section['id'], $section['title'], $section['callback'], $section['page'] );
+			}
+		}
+
+		/**
+		 * Save settings fields.
+		 *
+		 * @param array $settings Settings from specific option group.
+		 */
+		public static function create_fields( $settings ) {
+			foreach ( $settings as $setting ) {
+				add_settings_field( $setting['name'], $setting['title'], $setting['callback'], $setting['page'], $setting['section'], $setting );
+			};
 		}
 	}
 }

@@ -29,7 +29,7 @@ $is_theme_text_black = $this->template_options['bewpi_theme_text_black'];
 		<td class="invoice-details">
 			<h1 class="title"><?php echo $this->template_options['bewpi_title']; ?></h1>
 			<span class="number" style="color: <?php echo ( $is_theme_text_black ) ? 'black' : $theme_color; ?>;"><?php echo $this->get_formatted_number(); ?></span><br/>
-			<span><?php echo $this->get_formatted_invoice_date(); ?></span><br/><br/>
+			<span><?php echo $this->get_formatted_date(); ?></span><br/><br/>
 			<span><?php printf( __( 'Order Number: %s', 'woocommerce-pdf-invoices' ), $this->order->get_order_number() ); ?></span><br/>
 			<span><?php printf( __( 'Order Date: %s', 'woocommerce-pdf-invoices' ), $this->get_formatted_order_date() ); ?></span><br/>
 			<?php $this->display_purchase_order_number(); ?><br/>

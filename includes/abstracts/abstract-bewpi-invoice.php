@@ -1,29 +1,33 @@
 <?php
+/**
+ * Invoice Class for different types of invoices.
+ *
+ * @author      Bas Elbers
+ * @category    Abstract Class
+ * @package     BE_WooCommerce_PDF_Invoices/Abstracts
+ * @version     1.0.0
+ */
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit; // Exit if accessed directly
+	exit;
 }
 
 if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
-
 	/**
-	 * Makes the invoice.
-	 * Class BEWPI_Invoice
+	 * Class BEWPI_Abstract_Invoice.
 	 */
 	class BEWPI_Abstract_Invoice extends BEWPI_Abstract_Document {
-
 		/**
+		 * WooCommerce Order.
+		 *
 		 * @var WC_Order
 		 */
 		public $order;
 
 		/**
-		 * @var array
-		 */
-		public $orders = array();
-
-		/**
-		 * Invoice number
-		 * @var integer
+		 * Invoice number.
+		 *
+		 * @var int
 		 */
 		protected $number;
 
@@ -91,21 +95,26 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 		/**
 		 * BEWPI_Abstract_Invoice constructor.
 		 *
-		 * @param int    $order_id WooCommerce Order ID.
+		 * @param int $order_id WooCommerce Order ID.
 		 * @param string $type Type of invoice.
 		 */
 		public function __construct( $order_id, $type ) {
+			$formatted_number = get_post_meta( $order_id, '_bewpi_formatted_invoice_number', true );
+			// check if invoice already exists.
+			if ( ! empty( $formatted_number ) || isset( $_GET['bewpi_action'] ) && 'cancel' !== $_GET['bewpi_action'] ) {
+				$this->init();
+			}
+
 			parent::__construct();
 			$this->order            = wc_get_order( $order_id );
 			$this->type             = $type;
+
+
 			$this->columns_count    = $this->get_columns_count( $this->tax_count );
 			$this->formatted_number = get_post_meta( $this->order->id, '_bewpi_formatted_invoice_number', true );
 			$this->template_name    = $this->template_options['bewpi_template_name'];
 
-			// Check if the invoice already exists.
-			if ( ! empty( $this->formatted_number ) || isset( $_GET['bewpi_action'] ) && 'cancel' !== $_GET['bewpi_action'] ) {
-				$this->init();
-			}
+
 		}
 
 		/**
@@ -128,24 +137,24 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 			// format number with the number of digits.
 			$digitized_invoice_number = sprintf( '%0' . $this->template_options['bewpi_invoice_number_digits'] . 's', $this->number );
 			$formatted_invoice_number = str_replace( array(
-					'[prefix]',
-					'[suffix]',
-					'[number]',
-					'[order-date]',
-					'[order-number]',
-					'[Y]',
-					'[y]',
-					'[m]',
-				), array(
-					$this->template_options['bewpi_invoice_number_prefix'],
-					$this->template_options['bewpi_invoice_number_suffix'],
-					$digitized_invoice_number,
-					$this->get_formatted_order_date(),
-					$this->order->get_order_number(),
-					date_i18n( 'Y' ),
-					date_i18n( 'y' ),
-					date_i18n( 'm' ),
-				),
+				'[prefix]',
+				'[suffix]',
+				'[number]',
+				'[order-date]',
+				'[order-number]',
+				'[Y]',
+				'[y]',
+				'[m]',
+			), array(
+				$this->template_options['bewpi_invoice_number_prefix'],
+				$this->template_options['bewpi_invoice_number_suffix'],
+				$digitized_invoice_number,
+				$this->get_formatted_order_date(),
+				$this->order->get_order_number(),
+				date_i18n( 'Y' ),
+				date_i18n( 'y' ),
+				date_i18n( 'm' ),
+			),
 				$this->template_options['bewpi_invoice_number_format']
 			);
 
@@ -157,7 +166,7 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 		 *
 		 * @return string
 		 */
-		public function get_formatted_invoice_date() {
+		public function get_formatted_date() {
 			$date_format = $this->get_date_format();
 			return date_i18n( $date_format, current_time( 'timestamp' ) );
 		}
@@ -189,6 +198,7 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 			}
 
 			$order = wc_get_order( $order_id );
+
 			return $order->order_date;
 		}
 
@@ -200,8 +210,9 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 		 * @return string
 		 */
 		public function get_formatted_order_date( $order_id = 0 ) {
-			$order_date = $this->get_order_date( $order_id );
+			$order_date  = $this->get_order_date( $order_id );
 			$date_format = $this->get_date_format();
+
 			return date_i18n( $date_format, strtotime( $order_date ) );
 		}
 
@@ -221,6 +232,7 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 			}
 
 			do_action( 'bewpi_after_output_template_to_buffer' );
+
 			return $html_sections;
 		}
 
@@ -306,6 +318,7 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 			}
 
 			$max_invoice_number = $this->get_max_invoice_number();
+
 			return $max_invoice_number + 1;
 		}
 
@@ -371,7 +384,7 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 			update_post_meta( $this->order->id, '_bewpi_formatted_invoice_number', $this->formatted_number );
 			update_post_meta( $this->order->id, '_bewpi_invoice_number', $this->number );
 			update_post_meta( $this->order->id, '_bewpi_invoice_year', $this->year );
-			$this->date = $this->get_formatted_invoice_date();
+			$this->date = $this->get_formatted_date();
 			update_post_meta( $this->order->id, '_bewpi_invoice_date', $this->date );
 
 			$this->colspan = $this->get_colspan();
