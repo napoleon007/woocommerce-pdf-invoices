@@ -66,9 +66,12 @@ if ( ! class_exists( 'BE_WooCommerce_PDF_Invoices' ) ) {
 			// Issue will be fixed in PHPStorm version 2016.3 as stated https://youtrack.jetbrains.com/issue/WI-31754.
 			require_once BEWPI_DIR . 'includes/abstracts/abstract-bewpi-document.php';
 			require_once BEWPI_DIR . 'includes/abstracts/abstract-bewpi-invoice.php';
+			require_once BEWPI_DIR . 'includes/class-bewpi-documents.php';
+
 
 			if ( is_admin() ) {
-				require_once BEWPI_DIR . 'includes/admin/class-bewpi-admin-settings.php';
+				require_once BEWPI_DIR . 'includes/admin/settings/class-bewpi-settings-page.php';
+				require_once BEWPI_DIR . 'includes/admin/settings/class-bewpi-settings-invoices.php';
 				require_once BEWPI_DIR . 'includes/admin/class-bewpi-admin-notices.php';
 			}
 
@@ -508,6 +511,14 @@ if ( ! class_exists( 'BE_WooCommerce_PDF_Invoices' ) ) {
 			);
 
 			return $actions;
+		}
+
+		/**
+		 * Email Class.
+		 * @return WC_Emails
+		 */
+		public function documenter() {
+			return BEWPI_Documents::instance();
 		}
 	}
 }

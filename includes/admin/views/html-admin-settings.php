@@ -27,6 +27,6 @@ $current_tab = ( isset( $_GET['tab'] ) ) ? sanitize_key( $_GET['tab'] ) : 'bewpi
 		?>
 	</form>
 	<?php if ( ! is_plugin_active( 'woocommerce-pdf-invoices-premium/bootstrap.php' ) ) :
-		include BEWPI_DIR . 'includes/partials/settings-sidebar.php';
+		include BEWPI_DIR . 'includes/admin/views/html-admin-settings-sidebar.php';
 	endif; ?>
 </div>
