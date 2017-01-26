@@ -1,9 +1,4 @@
 <?php
-
-if ( ! defined( 'ABSPATH' ) ) {
-	exit; // Exit if accessed directly
-}
-
 /**
  * Transactional Emails Controller
  *
@@ -15,12 +10,27 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @category	Class
  * @author 		WooThemes
  */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Class BEWPI_Documents.
+ */
 class BEWPI_Documents {
 
-	/** @var array Array of email notification classes */
+	/**
+	 * 
+	 * @var array
+	 */
 	public $documents;
 
-	/** @var WC_Emails The single instance of the class */
+	/**
+	 * The single instance of the class.
+	 *
+	 * @var BEWPI_Documents
+	 */
 	protected static $_instance = null;
 
 	/**
@@ -131,7 +141,7 @@ class BEWPI_Documents {
 		// Include email classes
 		include_once BEWPI_DIR . 'includes/documents/class-bewpi-document.php';
 
-		$this->documents['BEWPI_Document_Invoice'] = include BEWPI_DIR . 'includes/documents/class-bewpi-document-invoice.php';
+		$this->documents['BEWPI_Document_Invoice'] = include BEWPI_DIR . 'includes/documents/class-bewpi-invoice.php';
 
 		$this->documents = apply_filters( 'woocommerce_email_classes', $this->documents );
 	}

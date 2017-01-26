@@ -67,15 +67,13 @@ if ( ! class_exists( 'BE_WooCommerce_PDF_Invoices' ) ) {
 			require_once BEWPI_DIR . 'includes/abstracts/abstract-bewpi-document.php';
 			require_once BEWPI_DIR . 'includes/abstracts/abstract-bewpi-invoice.php';
 			require_once BEWPI_DIR . 'includes/class-bewpi-documents.php';
-
+			require_once BEWPI_DIR . 'includes/class-bewpi-templates.php';
 
 			if ( is_admin() ) {
 				require_once BEWPI_DIR . 'includes/admin/settings/class-bewpi-settings-page.php';
 				require_once BEWPI_DIR . 'includes/admin/settings/class-bewpi-settings-invoices.php';
 				require_once BEWPI_DIR . 'includes/admin/class-bewpi-admin-notices.php';
 			}
-
-			require_once BEWPI_DIR . 'includes/class-bewpi-invoice.php';
 		}
 
 		/**
@@ -514,7 +512,17 @@ if ( ! class_exists( 'BE_WooCommerce_PDF_Invoices' ) ) {
 		}
 
 		/**
-		 * Email Class.
+		 * Global Template Class.
+		 *
+		 * @return mixed
+		 */
+		public function templater() {
+			return BEWPI_Templates::instance();
+		}
+
+		/**
+		 * Global document class.
+		 *
 		 * @return WC_Emails
 		 */
 		public function documenter() {

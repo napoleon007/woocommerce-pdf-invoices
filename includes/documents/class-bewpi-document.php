@@ -191,14 +191,16 @@ class BEWPI_Document extends WC_Settings_API {
 	 * Constructor.
 	 */
 	public function __construct() {
-		// Init settings
+		$this->plugin_id = 'bewpi_';
+
+		// Init settings.
 		$this->init_form_fields();
 		$this->init_settings();
 
-		// Save settings hook
-		add_action( 'woocommerce_update_options_email_' . $this->id, array( $this, 'process_admin_options' ) );
+		// Save settings hook.
+		add_action( 'woocommerce_update_options_invoices_' . $this->id, array( $this, 'process_admin_options' ) );
 
-		// Default template base if not declared in child constructor
+		// Default template base if not declared in child constructor.
 		if ( is_null( $this->template_base ) ) {
 			$this->template_base = WC()->plugin_path() . '/templates/';
 		}
@@ -340,15 +342,15 @@ class BEWPI_Document extends WC_Settings_API {
 	 */
 	public function get_option( $key, $empty_value = null ) {
 		$value = parent::get_option( $key, $empty_value );
-		return apply_filters( 'woocommerce_email_get_option', $value, $this, $value, $key, $empty_value );
+		return apply_filters( 'woocommerce_invoices_get_option', $value, $this, $value, $key, $empty_value );
 	}
 
 	/**
 	 * Checks if this email is enabled and will be sent.
 	 * @return bool
 	 */
-	public function is_enabled() {
-		return apply_filters( 'woocommerce_email_enabled_' . $this->id, 'yes' === $this->enabled, $this->object );
+	public function is_attached() {
+		return count( $this->get_option( 'bewpi_email_types' ) ) > 0;
 	}
 
 	/**

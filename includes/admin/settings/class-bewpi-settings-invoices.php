@@ -27,8 +27,24 @@ if ( ! class_exists( 'BEWPI_Settings_Invoices' ) ) {
 
 			add_filter( 'woocommerce_settings_tabs_array', array( $this, 'add_settings_page' ), 99 );
 			add_action( 'woocommerce_settings_' . $this->id, array( $this, 'output' ) );
+			add_action( 'woocommerce_sections_' . $this->id, array( $this, 'output_sections' ) );
 			add_action( 'woocommerce_settings_save_' . $this->id, array( $this, 'save' ) );
 			add_action( 'woocommerce_admin_field_documents', array( $this, 'document_settings' ) );
+		}
+
+		/**
+		 * Get sections.
+		 *
+		 * @return array
+		 */
+		public function get_sections() {
+
+			$sections = array(
+				''            => __( 'General', 'woocommerce-pdf-invoices' ),
+				'debug'       => __( 'Debug', 'woocommerce-pdf-invoices' ),
+			);
+
+			return apply_filters( 'woocommerce_get_sections_' . $this->id, $sections );
 		}
 
 		/**
@@ -37,20 +53,17 @@ if ( ! class_exists( 'BEWPI_Settings_Invoices' ) ) {
 		public function output() {
 			global $current_section;
 
-			// Define emails that can be customised here
-			$documenter          = BEWPI()->documenter();
-			$email_templates     = $documenter->get_documents();
-
-			if ( $current_section ) {
-				foreach ( $email_templates as $email_key => $email ) {
-					if ( strtolower( $email_key ) == $current_section ) {
-						$email->admin_options();
+			// show admin options if current section is document type section.
+			if ( ! array_key_exists( $current_section, $this->get_sections() ) ) {
+				$documenter      = BEWPI()->documenter();
+				foreach ( $documenter->get_documents() as $document_key => $document ) {
+					if ( strtolower( $document_key ) === $current_section ) {
+						$document->admin_options();
 						break;
 					}
 				}
 			} else {
-				$settings = $this->get_settings();
-				WC_Admin_Settings::output_fields( $settings );
+				WC_Admin_Settings::output_fields( $this->get_settings( $current_section ) );
 			}
 
 			add_filter( 'admin_footer_text', array( __CLASS__, 'plugin_review_text' ), 50 );
@@ -63,20 +76,16 @@ if ( ! class_exists( 'BEWPI_Settings_Invoices' ) ) {
 		public function save() {
 			global $current_section;
 
-			if ( ! $current_section ) {
-				WC_Admin_Settings::save_fields( $this->get_settings() );
-
+			// save section or document type options?
+			if ( array_key_exists( $current_section, $this->get_sections() ) ) {
+				WC_Admin_Settings::save_fields( $this->get_settings( $current_section ) );
 			} else {
-				$wc_emails = BEWPI_Documents::instance();
-
-				if ( in_array( $current_section, array_map( 'sanitize_title', array_keys( $wc_emails->get_emails() ) ) ) ) {
-					foreach ( $wc_emails->get_emails() as $email_id => $email ) {
-						if ( $current_section === sanitize_title( $email_id ) ) {
-							do_action( 'woocommerce_update_options_' . $this->id . '_' . $email->id );
-						}
+				$documenter = BEWPI()->documenter();
+				foreach (  $documenter->get_documents() as $document_key => $document ) {
+					if ( strtolower( $document_key ) === $current_section ) {
+						do_action( 'woocommerce_update_options_' . $this->id . '_' . $document->id );
+						break;
 					}
-				} else {
-					do_action( 'woocommerce_update_options_' . $this->id . '_' . $current_section );
 				}
 			}
 		}
@@ -84,38 +93,113 @@ if ( ! class_exists( 'BEWPI_Settings_Invoices' ) ) {
 		/**
 		 * Get the section settings array.
 		 *
+		 * @param string $current_section Settings section.
+		 *
 		 * @return mixed|void
 		 */
-		public function get_settings() {
+		public function get_settings( $current_section = '' ) {
 
-			$settings = apply_filters( 'woocommerce_email_settings', array(
+			if ( 'debug' === $current_section ) {
 
-				array( 'title' => __( 'PDF Documents', 'woocommerce-pdf-invoices' ),  'desc' => __( 'PDF documents from WooCommerce PDF Invoices plugin are listed below. Click on a document to configure it.', 'woocommerce-pdf-invoices' ), 'type' => 'title', 'id' => 'documents_settings' ),
+				$settings = apply_filters( 'woocommerce_invoices_debug_settings', array(
 
-				array( 'type' => 'documents' ),
-
-				array( 'type' => 'sectionend', 'id' => 'documents_settings' ),
-
-				array( 'title' => __( 'General Options', 'woocommerce-pdf-invoices' ), 'desc' => '', 'type' => 'title', 'id' => 'general_settings' ),
-
-				array(
-					'title'    => __( 'PDF view mode', 'woocommerce-pdf-invoices' ),
-					'desc'     => __( 'This controls how to view the PDF document.', 'woocommerce' ),
-					'id'       => 'bewpi_pdf_view_mode',
-					'class'    => 'wc-enhanced-select',
-					'css'      => 'min-width:300px;',
-					'default'  => 'browser',
-					'type'     => 'select',
-					'options'  => array(
-						'browser'  => __( 'Browser', 'woocommerce-pdf-invoices' ),
-						'download' => __( 'Download', 'woocommerce-pdf-invoices' ),
+					array(
+						'title' => __( 'Debug Options', 'woocommerce-pdf-invoices' ),
+						'desc'  => '',
+						'type'  => 'title',
+						'id'    => 'debug_settings',
 					),
-					'desc_tip' =>  true,
-				),
 
-				array( 'type' => 'sectionend', 'id' => 'general_settings' ),
+					array(
+						'title'   => __( 'Enable mPDF debugging', 'woocommerce-pdf-invoices' ),
+						'desc'    => '',
+						'id'      => 'bewpi_mpdf_debugging',
+						'default' => 'no',
+						'type'    => 'checkbox',
+					),
 
-			) );
+					array( 'type' => 'sectionend', 'id' => 'debug_settings' ),
+
+				) );
+
+			} else {
+
+				$settings = apply_filters( 'woocommerce_invoices_general_settings', array(
+
+					array(
+						'title' => __( 'PDF Documents', 'woocommerce-pdf-invoices' ),
+						'desc'  => __( 'PDF documents from WooCommerce PDF Invoices plugin are listed below. Click on a document to configure it.', 'woocommerce-pdf-invoices' ),
+						'type'  => 'title',
+						'id'    => 'documents_settings',
+					),
+
+					array( 'type' => 'documents' ),
+
+					array( 'type' => 'sectionend', 'id' => 'documents_settings' ),
+
+					array(
+						'title' => __( 'General Options', 'woocommerce-pdf-invoices' ),
+						'desc'  => '',
+						'type'  => 'title',
+						'id'    => 'general_settings',
+					),
+
+					array(
+						'title'    => __( 'PDF view mode', 'woocommerce-pdf-invoices' ),
+						'desc'     => __( 'This controls how to view the PDF document.', 'woocommerce' ),
+						'id'       => 'bewpi_pdf_view_mode',
+						'class'    => 'wc-enhanced-select',
+						'css'      => 'min-width:300px;',
+						'default'  => 'browser',
+						'type'     => 'select',
+						'options'  => array(
+							'browser'  => __( 'Browser', 'woocommerce-pdf-invoices' ),
+							'download' => __( 'Download', 'woocommerce-pdf-invoices' ),
+						),
+						'desc_tip' => true,
+					),
+
+					array(
+						'title'   => __( 'Enable Invoice Number column' ),
+						'desc'    => __( 'Show invoice numbers in Shop Order table.', 'woocommerce-pdf-invoices' ),
+						'id'      => 'bewpi_invoice_number_column',
+						'default' => 'no',
+						'type'    => 'checkbox',
+					),
+
+					array( 'type' => 'sectionend', 'id' => 'general_settings' ),
+
+					array(
+						'title' => __( 'Cloud Storage Options', 'woocommerce-pdf-invoices' ),
+						'desc'  => sprintf( __( 'Sign-up at <a href="%1$s">Email It In</a> to send invoices to your Dropbox, OneDrive, Google Drive or Egnyte and enter your <a href="%2$s">account</a> below.', 'woocommerce-pdf-invoices' ),
+							'https://emailitin.com',
+							'https://www.emailitin.com/user_account'
+						),
+						'type'  => 'title',
+						'id'    => 'cloud_settings',
+					),
+
+					array(
+						'title'   => __( 'Enable Email It In', 'woocommerce-pdf-invoices' ),
+						'desc'    => '',
+						'id'      => 'bewpi_emailitin',
+						'default' => 'no',
+						'type'    => 'checkbox',
+					),
+
+					array(
+						'title'   => __( 'Email It In account', 'woocommerce-pdf-invoices' ),
+						'desc'    => '',
+						'id'      => 'bewpi_emailitin_account',
+						'default' => '',
+						'type'    => 'text',
+						'css'      => 'min-width:350px;',
+					),
+
+					array( 'type' => 'sectionend', 'id' => 'cloud_settings' ),
+
+				) );
+			}
 
 			return apply_filters( 'woocommerce_get_settings_' . $this->id, $settings );
 		}
@@ -124,9 +208,8 @@ if ( ! class_exists( 'BEWPI_Settings_Invoices' ) ) {
 		 * Output email notification settings.
 		 */
 		public function document_settings() {
-			// Define emails that can be customised here
-			$documenter          = BEWPI()->documenter();
-			$email_templates =   $documenter->get_documents();
+			$documenter      = BEWPI()->documenter();
+			$email_templates = $documenter->get_documents();
 			?>
 			<tr valign="top">
 				<td class="wc_emails_wrapper" colspan="2">
@@ -139,7 +222,7 @@ if ( ! class_exists( 'BEWPI_Settings_Invoices' ) ) {
 								'name'       => __( 'Email', 'woocommerce' ),
 								'email_type' => __( 'Content Type', 'woocommerce' ),
 								'recipient'  => __( 'Recipient(s)', 'woocommerce' ),
-								'actions'    => ''
+								'actions'    => '',
 							) );
 							foreach ( $columns as $key => $column ) {
 								echo '<th class="wc-email-settings-table-' . esc_attr( $key ) . '">' . esc_html( $column ) . '</th>';
@@ -171,7 +254,7 @@ if ( ! class_exists( 'BEWPI_Settings_Invoices' ) ) {
 
 										if ( $email->is_manual() ) {
 											echo '<span class="status-manual tips" data-tip="' . __( 'Manually sent', 'woocommerce' ) . '">' . __( 'Manual', 'woocommerce' ) . '</span>';
-										} elseif ( $email->is_enabled() ) {
+										} elseif ( $email->is_attached() ) {
 											echo '<span class="status-enabled tips" data-tip="' . __( 'Enabled', 'woocommerce' ) . '">' . __( 'Yes', 'woocommerce' ) . '</span>';
 										} else {
 											echo '<span class="status-disabled tips" data-tip="' . __( 'Disabled', 'woocommerce' ) . '">-</span>';
