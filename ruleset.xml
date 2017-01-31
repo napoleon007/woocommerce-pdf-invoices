@@ -6,5 +6,6 @@
 		<exclude name="WordPress.VIP.SuperGlobalInputUsage" />
 		<exclude name="WordPress.XSS.EscapeOutput" />
 		<exclude name="WordPress.NamingConventions.ValidVariableName.NotSnakeCaseMemberVar" />
+		<exclude name="WordPress.VIP.RestrictedFunctions.file_get_contents" />
 	</rule>
 </ruleset>

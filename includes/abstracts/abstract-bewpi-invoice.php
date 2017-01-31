@@ -1,13 +1,20 @@
 <?php
+/**
+ * Invoice Class for different types of invoices.
+ *
+ * @author      Bas Elbers
+ * @category    Abstract Class
+ * @package     BE_WooCommerce_PDF_Invoices/Abstracts
+ * @version     1.0.0
+ */
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit; // Exit if accessed directly
+	exit;
 }
 
 if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
-
 	/**
-	 * Makes the invoice.
-	 * Class BEWPI_Invoice
+	 * Class BEWPI_Abstract_Invoice.
 	 */
 	class BEWPI_Abstract_Invoice extends BEWPI_Abstract_Document {
 		/**
@@ -39,22 +46,6 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 		protected $year;
 
 		/**
-		 * Number of columns from products table.
-		 *
-		 * @deprecated outlining columns will be refactored.
-		 * @var int
-		 */
-		public $columns_count;
-
-		/**
-		 * Colspan data to outline products table columns.
-		 *
-		 * @deprecated outlining columns will be refactored.
-		 * @var array
-		 */
-		protected $colspan;
-
-		/**
 		 * Width of the description cell of the product table.
 		 *
 		 * @deprecated outlining columns will be refactored.
@@ -82,7 +73,7 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 		/**
 		 * Invoice number.
 		 *
-		 * @return int
+		 * @return int as invoice number.
 		 */
 		public function get_number() {
 			return (int) $this->number;

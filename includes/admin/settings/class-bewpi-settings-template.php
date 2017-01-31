@@ -28,6 +28,9 @@ if ( ! class_exists( 'BEWPI_Template_Settings' ) ) {
 		 * BEWPI_Template_Settings constructor.
 		 */
 		public function __construct() {
+			$this->id = 'template';
+			$this->label = __( 'Template', 'woocommerce-pdf-invoices' );
+
 			add_action( 'admin_init', array( $this, 'admin_init' ) );
 			add_action( 'admin_notices', array( $this, 'show_settings_notices' ) );
 		}
@@ -673,5 +676,5 @@ if ( ! class_exists( 'BEWPI_Template_Settings' ) ) {
 		}
 	}
 
-	new BEWPI_Template_Settings();
+	return new BEWPI_Template_Settings();
 }
