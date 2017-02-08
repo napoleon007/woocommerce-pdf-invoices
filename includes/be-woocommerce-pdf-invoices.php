@@ -66,6 +66,7 @@ if ( ! class_exists( 'BE_WooCommerce_PDF_Invoices' ) ) {
 			// Issue will be fixed in PHPStorm version 2016.3 as stated https://youtrack.jetbrains.com/issue/WI-31754.
 			require_once BEWPI_DIR . 'includes/abstracts/abstract-bewpi-document.php';
 			require_once BEWPI_DIR . 'includes/abstracts/abstract-bewpi-invoice.php';
+			require_once BEWPI_DIR . 'includes/class-bewpi-invoice.php';
 			require_once BEWPI_DIR . 'includes/class-bewpi-documents.php';
 			require_once BEWPI_DIR . 'includes/class-bewpi-templates.php';
 
@@ -104,8 +105,6 @@ if ( ! class_exists( 'BE_WooCommerce_PDF_Invoices' ) ) {
 			// woocommerce.
 			add_action( 'woocommerce_admin_order_actions_end', array( $this, 'add_admin_order_pdf' ) );
 			add_action( 'add_meta_boxes', array( $this, 'add_admin_order_pdf_meta_box' ) );
-			add_filter( 'manage_edit-shop_order_columns', array( $this, 'add_invoice_number_column' ), 999 );
-			add_action( 'manage_shop_order_posts_custom_column', array( $this, 'invoice_number_column_data' ), 2 );
 			add_filter( 'woocommerce_my_account_my_orders_actions', array( $this, 'add_my_account_pdf' ), 10, 2 );
 			add_filter( 'woocommerce_email_headers', array( $this, 'add_emailitin_as_recipient' ), 10, 3 );
 			add_filter( 'woocommerce_email_attachments', array( $this, 'attach_invoice_to_email' ), 99, 3 );
@@ -121,9 +120,14 @@ if ( ! class_exists( 'BE_WooCommerce_PDF_Invoices' ) ) {
 			// Add plugin action links on "Plugins" page.
 			add_filter( 'plugin_action_links_' . BEWPI_PLUGIN_BASENAME, array( $this, 'add_plugin_action_links' ) );
 			add_filter( 'plugin_row_meta', array( $this, 'add_plugin_row_meta' ), 10, 2 );
+
 			// delete invoice if deleting order.
 			add_action( 'wp_trash_post', array( $this, 'delete_invoice' ), 10, 1 );
 			add_action( 'before_delete_post', array( $this, 'delete_invoice' ), 10, 1 );
+
+			// invoice number column for "Shop Order" page.
+			add_filter( 'manage_edit-shop_order_columns', array( $this, 'add_invoice_number_column' ), 999 );
+			add_action( 'manage_shop_order_posts_custom_column', array( $this, 'invoice_number_column_data' ), 2 );
 		}
 
 		/**
