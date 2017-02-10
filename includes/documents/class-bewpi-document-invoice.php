@@ -95,7 +95,7 @@ if ( ! class_exists( 'BEWPI_Document_Invoice' ) ) :
 		}
 
 		/**
-		 * Initialise settings form fields.
+		 * Initialize settings form fields.
 		 */
 		public function init_form_fields() {
 			$mailer    = WC()->mailer();
@@ -146,6 +146,14 @@ if ( ! class_exists( 'BEWPI_Document_Invoice' ) ) :
 					'title' => __( 'Hide customer notes' ),
 					'label' => __( 'By default the customer notes will be shown.', 'woocommerce-pdf-invoices' ),
 					'type'  => 'checkbox',
+				),
+				'terms' => array(
+					'title'    => __( 'Terms & conditions etc.', 'woocommerce-pdf-invoices' ),
+					'description' => __( 'Add terms & conditions, policies etc.', 'woocommerce-pdf-invoices' ),
+					'type'     => 'textarea',
+					'css'      => 'max-width: 350px;min-height:140px;',
+					'default' => '',
+					'desc_tip' => true,
 				),
 			);
 		}

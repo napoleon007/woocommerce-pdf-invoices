@@ -146,12 +146,11 @@ if ( ! class_exists( 'BEWPI_Settings_Invoices' ) ) {
 
 					array(
 						'title'    => __( 'Company logo', 'woocommerce-pdf-invoices' ),
-						'desc'     => '<br/>' . sprintf( __( 'Upload logo with Media Library and copy/paste <a href="%s" target="_blank">url</a>.', 'woocommerce-pdf-invoices' ), 'https://codex.wordpress.org/Media_Library_Screen#Attachment_Details' ),
 						'id'       => 'bewpi_company_logo',
 						'css'      => 'min-width:300px;',
 						'default'  => $templater->get_theme_logo_url(),
 						'type'     => 'text',
-						'desc_tip' => __( 'By default the theme logo is used.', 'woocommerce-pdf-invoices' ),
+						'desc_tip' => __( 'Choose an image from Media Library and copy and paste url. Default logo from your theme is used.', 'woocommerce-pdf-invoices' ),
 					),
 
 					array(
@@ -164,22 +163,70 @@ if ( ! class_exists( 'BEWPI_Settings_Invoices' ) ) {
 					),
 
 					array(
-						'title'    => __( 'Terms & conditions, policies etc.', 'woocommerce-pdf-invoices' ),
-						'id'       => 'bewpi_terms',
-						'css'      => 'min-width:300px;min-height:140px;',
-						'default'  => '',
-						'type'     => 'textarea',
-					),
-
-					'date_format'  => array(
 						'title'    => __( 'Date format', 'woocommerce-pdf-invoices' ),
-						'desc'     => '<br/>' . __( 'Choose your custom order and invoice date <a href="http://php.net/manual/en/datetime.formats.date.php" target="_blank">format</a>.', 'woocommerce-pdf-invoices' ),
+						'desc'     => __( 'Choose your custom order and invoice date <a href="http://php.net/manual/en/datetime.formats.date.php" target="_blank">format</a>.', 'woocommerce-pdf-invoices' ),
 						'id'       => 'bewpi_date_format',
+						'css'      => 'width:150px;',
 						'default'  => esc_attr( get_option( 'date_format' ) ),
 						'type'     => 'text',
 					),
 
 					array( 'type' => 'sectionend', 'id' => 'template_settings' ),
+
+					array(
+						'title' => __( 'Number Options', 'woocommerce-pdf-invoices' ),
+						'desc'  => 'Choose how to number the documents by selecting a numbering type and configuring the format.',
+						'type'  => 'title',
+						'id'    => 'template_settings',
+					),
+
+					array(
+						'title'       => __( 'Type', 'woocommerce-pdf-invoices' ),
+						'id'          => 'bewpi_number_type',
+						'default'     => 'sequential_number',
+						'type'        => 'select',
+						'css'         => 'min-width:300px;',
+						'options'     => array(
+							'sequential_number' => __( 'Sequential number', 'woocommerce_order_number' ),
+							'woocommerce_order_number' => __( 'WooCommerce order number', 'woocommerce_order_number' ),
+						),
+						'desc_tip'    => __( 'Choose which invoice numbering type to use.', 'woocommerce-pdf-invoices' ),
+					),
+
+					array(
+						'title'    => __( 'Enable yearly number reset', 'woocommerce-pdf-invoices' ),
+						'desc'     => __( 'Automatically reset numbering on New Year and use yearly folder structure to search documents in.', 'woocommerce-pdf-invoices' ),
+						'id'       => 'bewpi_reset_number_yearly',
+						'default'  => true,
+						'type'     => 'checkbox',
+					),
+
+					array(
+						'title'    => __( 'Digits', 'woocommerce-pdf-invoices' ),
+						'desc'     => __( 'This sets the number of zero digits for the document number. Default 00001.', 'woocommerce' ),
+						'id'       => 'bewpi_number_digits',
+						'css'      => 'width:50px;',
+						'default'  => 5,
+						'desc_tip' => true,
+						'type'     => 'number',
+						'custom_attributes' => array(
+							'min'  => 0,
+							'max'  => 20,
+							'step' => 1,
+						),
+					),
+
+					array(
+						'title'    => __( 'Format', 'woocommerce-pdf-invoices' ),
+						'desc'     => sprintf( __( 'Choose between multiple placeholders <code>%2$s</code> <code>%3$s</code> <code>%4$s</code> <code>%5$s</code> <code>%6$s</code>.<br/><code>%1$s</code> is required.', 'woocommerce-pdf-invoices' ), '[number]', '[order-number]', '[order-date]', '[m]', '[Y]', '[y]' ),
+						'id'       => 'bewpi_number_format',
+						'default'  => '[number]-[Y]',
+						'css'         => 'min-width:300px;',
+						'desc_tip' => true,
+						'type'     => 'text',
+					),
+
+					array( 'type' => 'sectionend', 'id' => 'number_settings' ),
 
 				));
 

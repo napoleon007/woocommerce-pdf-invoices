@@ -18,6 +18,19 @@
         element.click();
     };
 
+    setting.showHideSequentialNumberSettings = function (event) {
+        var settingIds = [ 'bewpi_reset_number_yearly', 'bewpi_number_digits', 'bewpi_number_format' ];
+        var display = 'none';
+
+        if ( event.target.value === 'sequential_number' ) {
+            display = 'table-row';
+        }
+
+        settingIds.forEach(function (settingId) {
+            document.querySelector('#' + settingId).closest('tr').style.display = display;
+        });
+    };
+
     var notice = {};
 
     notice.dismiss = function(event) {
@@ -105,6 +118,12 @@
         var deactivate = document.querySelector('tr[data-plugin="woocommerce-pdf-invoices/bootstrap.php"] span.deactivate a');
         if (deactivate !== null) {
             deactivate.onclick = bewpi.notice.deactivate;
+        }
+
+        var numberType = document.querySelector('select#bewpi_number_type');
+        if (numberType !== null) {
+            numberType.onchange = bewpi.setting.showHideSequentialNumberSettings;
+            numberType.onchange( {target: numberType} );
         }
     };
 
