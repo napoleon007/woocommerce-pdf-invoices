@@ -17,6 +17,13 @@ if ( ! class_exists( 'BEWPI_Abstract_Document' ) ) {
 	abstract class BEWPI_Abstract_Document {
 
 		/**
+		 * ID of document.
+		 *
+		 * @var string Document ID.
+		 */
+		protected $id;
+
+		/**
 		 * Type of document like invoice, packing slip or credit note.
 		 *
 		 * @var string type of document.
@@ -76,11 +83,14 @@ if ( ! class_exists( 'BEWPI_Abstract_Document' ) ) {
 		 * BEWPI_Abstract_Document constructor.
 		 */
 		public function __construct() {
-			$templater    = WPI()->templater();
-			$templater->set_order( $this->order );
+			$templater              = WPI()->templater();
+
 			$this->template         = $templater->get_template( $this->type );
 			$this->general_options  = get_option( 'bewpi_general_settings' ); // @todo remove.
 			$this->template_options = get_option( 'bewpi_template_settings' ); // @todo remove and use 'templater()'.
+
+			$templater->set_order( $this->order );
+			$templater->set_document( $this );
 		}
 
 		/**
@@ -302,22 +312,7 @@ if ( ! class_exists( 'BEWPI_Abstract_Document' ) ) {
 		}
 
 		/**
-		 * Check if pdf exists within uploads folder.
-		 *
-		 * @param string $full_path to pdf file.
-		 *
-		 * @return bool/string false when pdf does not exist else full path to pdf.
-		 */
-		public static function exists( $full_path ) {
-			if ( ! file_exists( $full_path ) ) {
-				return false;
-			}
-
-			return $full_path;
-		}
-
-		/**
-		 * Get document type.
+		 * Get type.
 		 *
 		 * @return string.
 		 */

@@ -608,7 +608,7 @@ if ( ! class_exists( 'BE_WooCommerce_PDF_Invoices' ) ) {
 			$details = apply_filters( 'bewpi_order_page_pdf_invoice_meta_box_details', array(
 				'invoice_date' => array(
 					'title' => __( 'Invoiced on:', 'woocommerce-pdf-invoices' ),
-					'value' => $invoice->get_formatted_invoice_date(),
+					'value' => $invoice->get_formatted_date(),
 				),
 				'invoice_number' => array(
 					'title' => __( 'Invoice number:', 'woocommerce-pdf-invoices' ),
@@ -662,7 +662,7 @@ if ( ! class_exists( 'BE_WooCommerce_PDF_Invoices' ) ) {
 			$tags = array(
 				'{formatted_invoice_number}' => $invoice->get_formatted_number(),
 				'{order_number}'             => $order_id,
-				'{formatted_invoice_date}'   => $invoice->get_formatted_invoice_date(),
+				'{formatted_invoice_date}'   => $invoice->get_formatted_date(),
 				'{formatted_order_date}'     => $invoice->get_formatted_order_date(),
 			);
 			// find and replace placeholders.
@@ -742,6 +742,21 @@ if ( ! class_exists( 'BE_WooCommerce_PDF_Invoices' ) ) {
 			}
 
 			return $options[ $name ];
+		}
+
+		/**
+		 * Get invoice object by WC_Order ID.
+		 *
+		 * @param int $order_id WC_Order ID.
+		 *
+		 * @return BEWPI_Invoice|bool
+		 */
+		public static function get_invoice( $order_id ) {
+			if ( ! BEWPI_Invoice::exists( $order_id ) ) {
+				return false;
+			}
+
+			return new BEWPI_Invoice( $order_id );
 		}
 
 		/**

@@ -94,7 +94,7 @@ if ( ! class_exists( 'BEWPI_Packing_Slip' ) ) {
 				$pdf_path        = $this->get_pdf_path();
 				$this->full_path = WPI_ATTACHMENTS_DIR . '/' . $pdf_path;
 
-				if ( parent::exists( $this->full_path ) ) {
+				if ( file_exists( $this->full_path ) ) {
 					parent::delete( $this->full_path );
 				}
 			}

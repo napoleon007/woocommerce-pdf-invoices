@@ -23,9 +23,8 @@ if ( ! class_exists( 'BEWPI_Invoice' ) ) {
 		 * @param int $order_id WooCommerce Order ID.
 		 */
 		public function __construct( $order_id ) {
-			$this->order        = wc_get_order( $order_id );
-			$this->type         = 'invoice/simple';
-			WPI()->templater()->set_invoice( $this );
+			$this->id   = 'invoice';
+			$this->type = 'invoice/simple';
 			parent::__construct( $order_id );
 		}
 
@@ -48,16 +47,57 @@ if ( ! class_exists( 'BEWPI_Invoice' ) ) {
 		}
 
 		/**
+		 * Check if invoice exists.
+		 *
+		 * @param int $order_id WooCommerce Order ID.
+		 *
+		 * @return bool|string false when no pdf invoice exists or full path when exists.
+		 */
+		public static function exists( $order_id ) {
+			// pdf data exists in database?
+			$pdf_path = get_post_meta( $order_id, '_bewpi_invoice_pdf_path', true );
+			if ( ! $pdf_path ) {
+				return false;
+			}
+
+			return file_exists( WPI_ATTACHMENTS_DIR . '/' . $pdf_path );
+		}
+
+		/**
 		 * Delete invoice file and data to prevent invoice number conflicts.
 		 *
-		 * @param int $post_id WordPress post ID.
+		 * @param int $order_id WC order ID.
 		 */
-		public static function delete( $post_id ) {
-			if ( 'shop_order' !== get_post_type( $post_id ) ) {
+		public static function delete( $order_id ) {
+			if ( 'shop_order' !== get_post_type( $order_id ) ) {
 				return;
 			}
 
-			parent::delete( $post_id );
+			// Remove pdf file.
+			$full_path = WPI_ATTACHMENTS_DIR . '/' . get_post_meta( $order_id, '_bewpi_invoice_pdf_path', true );
+			BEWPI_Abstract_Document::delete( $full_path );
+
+			// Remove invoice postmeta from database.
+			delete_post_meta( $order_id, '_bewpi_invoice_number' );
+			delete_post_meta( $order_id, '_bewpi_invoice_date' );
+			delete_post_meta( $order_id, '_bewpi_invoice_pdf_path' );
+
+			// Version 2.6+ not used anymore.
+			delete_post_meta( $order_id, '_bewpi_formatted_invoice_number' );
+			delete_post_meta( $order_id, '_bewpi_invoice_year' );
+
+			do_action( 'bewpi_after_post_meta_deletion', $order_id );
+		}
+
+		public function generate( $destination = 'F' ) {
+			$order_id = BEWPI_WC_Order_Compatibility::get_id( $this->order );
+
+			if ( self::exists( $order_id ) ) {
+				// delete postmeta and PDF.
+				self::delete( $order_id );
+			}
+
+			parent::generate( $destination );
 		}
 
 		/**

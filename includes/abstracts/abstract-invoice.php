@@ -65,20 +65,19 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 		/**
 		 * BEWPI_Abstract_Invoice constructor.
 		 *
-		 * @param int $order_id WooCommerce Order ID.
+		 * @param int $order_id WC_Order ID.
 		 */
 		public function __construct( $order_id ) {
+			$this->order     = wc_get_order( $order_id );
+			$this->number    = get_post_meta( $order_id, sprintf( '_bewpi_%s_number', $this->id ), true );
+			$this->date      = get_post_meta( $order_id, sprintf( '_bewpi_%s_date', $this->id ), true );
+			$this->year      = date_i18n( 'Y', strtotime( $this->date ) );
+			$this->full_path = WPI_ATTACHMENTS_DIR . '/' . (string) get_post_meta( $order_id, sprintf( '_bewpi_%s_pdf_path', $this->id ), true );
+			$this->filename  = basename( $this->full_path );
+
+			WPI()->templater()->set_invoice( $this );
+
 			parent::__construct();
-
-			$this->full_path = self::exists( $order_id );
-			if ( $this->full_path ) {
-				$order_id = BEWPI_WC_Order_Compatibility::get_id( $this->order );
-
-				$this->number   = get_post_meta( $order_id, '_bewpi_invoice_number', true );
-				$this->date     = get_post_meta( $order_id, '_bewpi_invoice_date', true );
-				$this->year     = date_i18n( 'Y', strtotime( $this->date ) );
-				$this->filename = basename( $this->full_path );
-			}
 		}
 
 		/**
@@ -131,7 +130,19 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 		 *
 		 * @return string
 		 */
+		public function get_formatted_date() {
+			return date_i18n( $this->get_date_format(), strtotime( $this->date ) );
+		}
+
+		/**
+		 * Format and localize (MySQL) invoice date.
+		 *
+		 * @deprecated Use get_formatted_date() instead.
+		 * @return string
+		 */
 		public function get_formatted_invoice_date() {
+			_deprecated_function( __FUNCTION__, 'WooCommerce PDF Invoices v2.9.2', 'get_formatted_date()' );
+
 			return date_i18n( $this->get_date_format(), strtotime( $this->date ) );
 		}
 
@@ -219,7 +230,7 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 		 *
 		 * @return int
 		 */
-		private function get_next_invoice_number() {
+		protected function get_next_invoice_number() {
 			// uses WooCommerce order numbers as invoice numbers?
 			if ( 'woocommerce_order_number' === $this->template_options['bewpi_invoice_number_type'] ) {
 				return $this->order->get_order_number();
@@ -257,10 +268,16 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 					"SELECT MAX(CAST(pm2.meta_value AS UNSIGNED)) AS last_invoice_number
 					FROM $wpdb->postmeta pm1
 						INNER JOIN $wpdb->postmeta pm2 ON pm1.post_id = pm2.post_id
-					WHERE pm1.meta_key = %s AND YEAR(pm1.meta_value) = %d AND pm2.meta_key = %s",
-					'_bewpi_invoice_date',
+					WHERE pm1.meta_key LIKE '%s'
+						AND pm1.meta_key LIKE '%s'
+						AND YEAR(pm1.meta_value) = %d
+						AND pm2.meta_key LIKE '%s'
+						AND pm2.meta_key LIKE '%s'",
+					'%_bewpi_%',
+					'%_date%',
 					(int) date_i18n( 'Y', current_time( 'timestamp' ) ),
-					'_bewpi_invoice_number'
+					'%_bewpi_%',
+					'%_number%'
 				);
 			} else {
 				// get all.
@@ -268,8 +285,9 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 					"SELECT MAX(CAST(pm2.meta_value AS UNSIGNED)) AS last_invoice_number
 					FROM $wpdb->postmeta pm1
 						INNER JOIN $wpdb->postmeta pm2 ON pm1.post_id = pm2.post_id
-					WHERE pm2.meta_key = %s",
-					'_bewpi_invoice_number'
+					WHERE pm2.meta_key LIKE '%s' AND pm2.meta_key LIKE '%s'",
+					'%_bewpi_%',
+					'%_number%'
 				);
 			}
 
@@ -284,14 +302,6 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 		 * @return string
 		 */
 		public function generate( $destination = 'F' ) {
-			// WC backwards compatibility.
-			$order_id = BEWPI_WC_Order_Compatibility::get_id( $this->order );
-
-			if ( BEWPI_Invoice::exists( $order_id ) ) {
-				// delete postmeta and PDF.
-				self::delete( $order_id );
-			}
-
 			$this->date   = current_time( 'mysql' );
 			$this->number = $this->get_next_invoice_number();
 			$this->year   = date_i18n( 'Y', current_time( 'timestamp' ) );
@@ -307,10 +317,11 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 			$this->full_path = WPI_ATTACHMENTS_DIR . '/' . $pdf_path;
 			$this->filename  = basename( $this->full_path );
 
-			// update invoice data in db.
-			update_post_meta( $order_id, '_bewpi_invoice_date', $this->date );
-			update_post_meta( $order_id, '_bewpi_invoice_number', $this->number );
-			update_post_meta( $order_id, '_bewpi_invoice_pdf_path', $pdf_path );
+			// Update invoice data in db.
+			$order_id = BEWPI_WC_Order_Compatibility::get_id( $this->order );
+			update_post_meta( $order_id, sprintf( '_bewpi_%s_date', $this->id ), $this->date );
+			update_post_meta( $order_id, sprintf( '_bewpi_%s_number', $this->id ), $this->number );
+			update_post_meta( $order_id, sprintf( '_bewpi_%s_pdf_path', $this->id ), $pdf_path );
 
 			do_action( 'bewpi_before_document_generation', $this->type, $order_id );
 
@@ -331,28 +342,6 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 			parent::generate( $destination );
 
 			return $this->full_path;
-		}
-
-		/**
-		 * Delete all invoice data from database and pdf file.
-		 *
-		 * @param int $order_id WooCommerce Order ID.
-		 */
-		public static function delete( $order_id ) {
-			// Remove pdf file.
-			$full_path = WPI_ATTACHMENTS_DIR . '/' . get_post_meta( $order_id, '_bewpi_invoice_pdf_path', true );
-			parent::delete( $full_path );
-
-			// Remove invoice postmeta from database.
-			delete_post_meta( $order_id, '_bewpi_invoice_number' );
-			delete_post_meta( $order_id, '_bewpi_invoice_date' );
-			delete_post_meta( $order_id, '_bewpi_invoice_pdf_path' );
-
-			// Version 2.6+ not used anymore.
-			delete_post_meta( $order_id, '_bewpi_formatted_invoice_number' );
-			delete_post_meta( $order_id, '_bewpi_invoice_year' );
-
-			do_action( 'bewpi_after_post_meta_deletion', $order_id );
 		}
 
 		/**
@@ -514,23 +503,6 @@ if ( ! class_exists( 'BEWPI_Abstract_Invoice' ) ) {
 			}
 
 			return true;
-		}
-
-		/**
-		 * Check if invoice exists.
-		 *
-		 * @param int $order_id WooCommerce Order ID.
-		 *
-		 * @return bool|string false when no pdf invoice exists or full path when exists.
-		 */
-		public static function exists( $order_id ) {
-			// pdf data exists in database?
-			$pdf_path = get_post_meta( $order_id, '_bewpi_invoice_pdf_path', true );
-			if ( ! $pdf_path ) {
-				return false;
-			}
-
-			return parent::exists( WPI_ATTACHMENTS_DIR . '/' . $pdf_path );
 		}
 
 		/**

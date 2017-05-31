@@ -37,7 +37,7 @@ $payment_gateway = wc_get_payment_gateway_by_order( $order );
 			<?php
 			printf( __( 'Invoice #: %s', 'woocommerce-pdf-invoices' ), $invoice->get_formatted_number() );
 			printf( '<br />' );
-			printf( __( 'Invoice Date: %s', 'woocommerce-pdf-invoices' ), $invoice->get_formatted_invoice_date() );
+			printf( __( 'Invoice Date: %s', 'woocommerce-pdf-invoices' ), $invoice->get_formatted_date() );
 			printf( '<br />' );
 			printf( __( 'Order Date: %s', 'woocommerce-pdf-invoices' ), $invoice->get_formatted_order_date() );
 			printf( '<br />' );

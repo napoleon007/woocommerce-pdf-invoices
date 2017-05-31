@@ -31,7 +31,14 @@ class BEWPI_Template {
 	/**
 	 * WooCommerce PDF Invoices invoice.
 	 *
-	 * @var BEWPI_Invoice.
+	 * @var BEWPI_Abstract_Document.
+	 */
+	public $document;
+
+	/**
+	 * WooCommerce PDF Invoices invoice.
+	 *
+	 * @var BEWPI_Abstract_Invoice.
 	 */
 	public $invoice;
 
@@ -317,10 +324,19 @@ class BEWPI_Template {
 	/**
 	 * Set invoice.
 	 *
-	 * @param BEWPI_Invoice $invoice WooCommerce PDF Invoices invoice object.
+	 * @param BEWPI_Abstract_Invoice $invoice WooCommerce PDF Invoices invoice object.
 	 */
 	public function set_invoice( $invoice ) {
 		$this->invoice = $invoice;
+	}
+
+	/**
+	 * Set document.
+	 *
+	 * @param BEWPI_Abstract_Document $document The document.
+	 */
+	public function set_document( $document ) {
+		$this->document = $document;
 	}
 
 	/**
