@@ -48,7 +48,7 @@ $payment_gateway = wc_get_payment_gateway_by_order( $order );
 				printf( __( 'Payment Method: %s', 'woocommerce-pdf-invoices' ), $payment_gateway->get_title() );
 
 				// Get PO Number from 'WooCommerce Purchase Order Gateway' plugin.
-				if ( 'woocommerce_gateway_purchase_order' === $payment_gateway->get_method_title() ) {
+				if ( 'woocommerce_gateway_purchase_order' === BEWPI_WC_Payment_Gateway_Compatibility::get_method_title( $payment_gateway ) ) {
 					$po_number = $templater->get_meta( '_po_number' );
 					if ( $po_number ) {
 						printf( '<br />' );
